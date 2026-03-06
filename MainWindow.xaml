@@ -1,0 +1,55 @@
+<!-- MainWindow.xaml 
+<Window x:Class="KinectViz.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kinect Dashboard" Height="600" Width="900">
+
+    <!-- Main layout: left = live view, right = stats -->
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT SIDE: Live view area (we will draw skeleton here later) -->
+        <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="0,0,10,0">
+            <Grid>
+                <Canvas x:Name="SkeletonCanvas" Background="Black"/>
+
+                <!-- Just a label so we know what this area is -->
+                <TextBlock Text="Live View"
+                           Foreground="White"
+                           FontSize="16"
+                           Margin="10"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Top"/>
+            </Grid>
+        </Border>
+
+        <!-- RIGHT SIDE: Dashboard 
+        <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Padding="10">
+            <StackPanel>
+
+                <TextBlock Text="Dashboard" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                <!-- Form Score -->
+                <TextBlock Text="Form Score (0 - 100)" FontSize="14" Margin="0,0,0,5"/>
+                <ProgressBar x:Name="FormScoreBar" Minimum="0" Maximum="100" Height="20" Margin="0,0,0,15"/>
+
+                <!-- Swing Speed -->
+                <TextBlock Text="Swing Speed" FontSize="14" Margin="0,0,0,5"/>
+                <TextBlock x:Name="SwingSpeedText" Text="--" FontSize="13" Margin="0,0,0,15"/>
+
+                <!-- Consistency -->
+                <TextBlock Text="Consistency (%)" FontSize="14" Margin="0,0,0,5"/>
+                <TextBlock x:Name="ConsistencyText" Text="--" FontSize="13" Margin="0,0,0,15"/>
+
+                <!-- Stroke Count -->
+                <TextBlock Text="Stroke Count" FontSize="14" Margin="0,0,0,5"/>
+                <TextBlock x:Name="StrokeCountText" Text="0" FontSize="13"/>
+
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</Window>
