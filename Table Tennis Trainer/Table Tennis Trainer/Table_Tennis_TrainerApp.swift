@@ -8,7 +8,7 @@ import ARKit
 
 class PoseSender {
     var connection: NWConnection?
-    let pcIP: String = "" // Dion needs to provide his IP
+    let pcIP: String = "146.244.15.87" // Dion needs to provide his IP. Using Love Library's PC right now
     let port: NWEndpoint.Port = 8888
 
     init() {
