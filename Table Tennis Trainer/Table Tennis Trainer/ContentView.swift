@@ -1,49 +1,65 @@
 import SwiftUI
 import ARKit
-import Network
+import RealityKit
 
 struct ContentView: View {
-    @State private var sender = PoseSender()
     
+    @State private var transmitter = MotionTransmitter()
+
     var body: some View {
-        ARViewContainer(sender: sender)
+        ARViewContainer(transmitter: transmitter)
             .edgesIgnoringSafeArea(.all)
     }
 }
 
 struct ARViewContainer: UIViewRepresentable {
-    let sender: PoseSender
-    
+    let transmitter: MotionTransmitter
+
     func makeUIView(context: Context) -> ARSCNView {
         let arView = ARSCNView()
-        let config = ARBodyTrackingConfiguration() 
+        let config = ARBodyTrackingConfiguration()
         arView.session.run(config)
         arView.session.delegate = context.coordinator
         return arView
     }
-    
+
     func updateUIView(_ uiView: ARSCNView, context: Context) {}
-    
+
     func makeCoordinator() -> Coordinator {
-        Coordinator(sender: sender)
+        Coordinator(transmitter: transmitter)
     }
-    
+
     class Coordinator: NSObject, ARSessionDelegate {
-        let sender: PoseSender
-        init(sender: PoseSender) { self.sender = sender }
+        let transmitter: MotionTransmitter
+        init(transmitter: MotionTransmitter) { self.transmitter = transmitter }
         
         func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
             for anchor in anchors {
                 if let bodyAnchor = anchor as? ARBodyAnchor {
-                    // Extract 2D normalized coordinates (0.0 to 1.0)
-                    let elbow = bodyAnchor.skeleton.modelTransform(for: .rightElbow)
-                    let wrist = bodyAnchor.skeleton.modelTransform(for: .rightWrist)
+                    // We are using the specific 'elbow_right' and 'wrist_right' naming convention
+                    let elbowJoint = ARSkeleton.JointName(rawValue: "elbow_right")
+                    let wristJoint = ARSkeleton.JointName(rawValue: "wrist_right")
                     
-                    // Send to Windows PC
-                    sender.sendJointData(joint: "Elbow", x: elbow.columns.3.x, y: elbow.columns.3.y)
-                    sender.sendJointData(joint: "Wrist", x: wrist.columns.3.x, y: wrist.columns.3.y)
+                    let elbow = bodyAnchor.skeleton.modelTransform(for: elbowJoint)
+                    let wrist = bodyAnchor.skeleton.modelTransform(for: wristJoint)
+                    
+                    // Extracting X and Y from the transform
+                    let ex = elbow?.columns.3.x ?? 0
+                    let ey = elbow?.columns.3.y ?? 0
+                    let wx = wrist?.columns.3.x ?? 0
+                    let wy = wrist?.columns.3.y ?? 0
+                    
+                    transmitter.sendJointData(joint: "Elbow", x: ex, y: ey)
+                    transmitter.sendJointData(joint: "Wrist", x: wx, y: wy)
                 }
             }
+        }
+        func session(_ session: ARSession, didFailWithError error: Error) {
+            print("AR Session Failed: \(error.localizedDescription)")
+        }
+
+        func sessionWasInterrupted(_ session: ARSession) {
+            print("AR Session Interrupted")
         }
     }
 }
