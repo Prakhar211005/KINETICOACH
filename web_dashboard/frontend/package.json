@@ -1,0 +1,13 @@
+{
+  "name": "kineticoach-frontend",
+  "version": "0.1.0",
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "socket.io-client": "^4.7.0",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start"
+  }
+}
