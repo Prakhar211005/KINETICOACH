@@ -35,22 +35,31 @@ struct ARViewContainer: UIViewRepresentable {
         
         func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
             for anchor in anchors {
-                if let bodyAnchor = anchor as? ARBodyAnchor {
-                    // We are using the specific 'elbow_right' and 'wrist_right' naming convention
-                    let elbowJoint = ARSkeleton.JointName(rawValue: "elbow_right")
-                    let wristJoint = ARSkeleton.JointName(rawValue: "wrist_right")
-                    
-                    let elbow = bodyAnchor.skeleton.modelTransform(for: elbowJoint)
-                    let wrist = bodyAnchor.skeleton.modelTransform(for: wristJoint)
-                    
-                    // Extracting X and Y from the transform
-                    let ex = elbow?.columns.3.x ?? 0
-                    let ey = elbow?.columns.3.y ?? 0
-                    let wx = wrist?.columns.3.x ?? 0
-                    let wy = wrist?.columns.3.y ?? 0
-                    
-                    transmitter.sendJointData(joint: "Elbow", x: ex, y: ey)
-                    transmitter.sendJointData(joint: "Wrist", x: wx, y: wy)
+                guard let bodyAnchor = anchor as? ARBodyAnchor else {
+                    continue
+                }
+
+                let elbowJoint = ARSkeleton.JointName(rawValue: "right_forearm_joint")
+                let wristJoint = ARSkeleton.JointName(rawValue: "right_hand_joint")
+
+                if let elbowTransform = bodyAnchor.skeleton.modelTransform(for: elbowJoint) {
+                    let ex = elbowTransform.columns.3.x
+                    let ey = elbowTransform.columns.3.y
+
+                    poseSender.sendJointData(joint: "Elbow", x: ex, y: ey)
+                    print("Elbow:", ex, ey)
+                } else {
+                    print("Elbow joint not found")
+                }
+
+                if let wristTransform = bodyAnchor.skeleton.modelTransform(for: wristJoint) {
+                    let wx = wristTransform.columns.3.x
+                    let wy = wristTransform.columns.3.y
+
+                    poseSender.sendJointData(joint: "Wrist", x: wx, y: wy)
+                    print("Wrist:", wx, wy)
+                } else {
+                    print("Wrist joint not found")
                 }
             }
         }
