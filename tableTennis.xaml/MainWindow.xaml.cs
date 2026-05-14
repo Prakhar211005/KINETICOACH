@@ -1,72 +1,194 @@
-// For data transmission 
-
 using System;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
-namespace TableTennisDashboard
+namespace KinectViz
 {
     public partial class MainWindow : Window
     {
-        private UdpClient udpServer;
+        private UdpClient? udpServer;
         private const int Port = 8888;
+        private bool isListening = true;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            AddLog("Application started.");
+
             StartListening();
         }
 
         private void StartListening()
         {
-            udpServer = new UdpClient(Port);
-            Task.Run(() => {
-                while (true)
-                {
-                    var remoteEP = new IPEndPoint(IPAddress.Any, Port);
-                    var data = udpServer.Receive(ref remoteEP);
-                    string message = Encoding.UTF8.GetString(data);
+            try
+            {
+                udpServer = new UdpClient();
 
-                    // Logic
-                    Dispatcher.Invoke(() => HandleIncomingData(message));
-                }
-            });
+                udpServer.Client.SetSocketOption(
+                    SocketOptionLevel.Socket,
+                    SocketOptionName.ReuseAddress,
+                    true
+                );
+
+                udpServer.Client.Bind(new IPEndPoint(IPAddress.Any, Port));
+
+                AddLog("UDP receiver started on port " + Port);
+
+                Task.Run(() =>
+                {
+                    IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+
+                    while (isListening)
+                    {
+                        try
+                        {
+                            byte[] receivedBytes = udpServer.Receive(ref remoteEP);
+
+                            string message = Encoding.UTF8
+                                .GetString(receivedBytes)
+                                .Trim();
+
+                            Dispatcher.Invoke(() =>
+                            {
+                                AddLog("RAW RECEIVED: " + message);
+
+                                HandleIncomingData(message);
+                            });
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                AddLog("UDP receive error: " + ex.Message);
+                            });
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                AddLog("Failed to start UDP: " + ex.Message);
+            }
         }
 
         private void HandleIncomingData(string data)
         {
-            Dispatcher.Invoke(() => {
-                System.Diagnostics.Debug.WriteLine("UI Thread is updating!");
-                CoordinateDisplay.Text = data;
+            ReceivedDataText.Text = data;
 
-                try
+            try
+            {
+                string[] mainParts = data.Split(':');
+
+                if (mainParts.Length < 2)
                 {
-                    CoordinateDisplay.Text = data; // Show raw text
-
-                    // 1. Split "Elbow:0.5,1.2" into parts
-                    string[] mainParts = data.Split(':');
-                    if (mainParts.Length < 2) return;
-
-                    string[] coords = mainParts[1].Split(',');
-                    float rawX = float.Parse(coords[0]);
-                    float rawY = float.Parse(coords[1]);
-
-                    // 2. Map ARKit coordinates to Screen coordinates
-                    // ARKit uses small values (meters), so we multiply to see movement
-                    double screenX = (rawX * 10000) + (this.ActualWidth / 2);
-                    double screenY = (rawY * -10000) + (this.ActualHeight / 2);
-
-                    // 3. Move the dot
-                    JointDot.Visibility = Visibility.Visible;
-                    Canvas.SetLeft(JointDot, screenX);
-                    Canvas.SetTop(JointDot, screenY);
+                    AddLog("Invalid format: " + data);
+                    return;
                 }
-                catch { /* Handle parsing errors if data is malformed */ }
-            });
+
+                string jointName = mainParts[0].Trim();
+
+                string[] coords = mainParts[1].Split(',');
+
+                if (coords.Length < 2)
+                {
+                    AddLog("Invalid coordinate format.");
+                    return;
+                }
+
+                double x = double.Parse(
+                    coords[0].Trim(),
+                    CultureInfo.InvariantCulture
+                );
+
+                double y = double.Parse(
+                    coords[1].Trim(),
+                    CultureInfo.InvariantCulture
+                );
+
+                AddLog("Parsed X=" + x + " Y=" + y);
+
+                if (jointName.Equals("Wrist",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    DrawDot(x, y);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog("Parsing error: " + ex.Message);
+            }
+        }
+
+        private void DrawDot(double x, double y)
+        {
+            double width = SkeletonCanvas.ActualWidth;
+            double height = SkeletonCanvas.ActualHeight;
+
+            if (width <= 0 || height <= 0)
+            {
+                AddLog("Canvas size invalid.");
+                return;
+            }
+
+            double canvasX = (x + 1) * width / 2;
+            double canvasY = (1 - y) * height / 2;
+
+            canvasX = Math.Max(0,
+                Math.Min(width - 30, canvasX));
+
+            canvasY = Math.Max(0,
+                Math.Min(height - 30, canvasY));
+
+            SkeletonCanvas.Children.Clear();
+
+            Ellipse dot = new Ellipse
+            {
+                Width = 30,
+                Height = 30,
+                Fill = Brushes.Red
+            };
+
+            System.Windows.Controls.Canvas.SetLeft(dot, canvasX);
+            System.Windows.Controls.Canvas.SetTop(dot, canvasY);
+
+            SkeletonCanvas.Children.Add(dot);
+
+            AddLog("Dot drawn.");
+        }
+
+        private void AddLog(string message)
+        {
+            string time =
+                DateTime.Now.ToString("HH:mm:ss");
+
+            LogBox.AppendText(
+                "[" + time + "] " +
+                message +
+                Environment.NewLine
+            );
+
+            LogBox.ScrollToEnd();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            isListening = false;
+
+            udpServer?.Close();
+            udpServer?.Dispose();
+
+            base.OnClosed(e);
         }
     }
 }
