@@ -1,38 +1,239 @@
-# KINETICOACH
-A TABLE TENNIS MOTION ANALYSIS SOFTWARE
+Table Tennis Trainer
 
-Project Vision:
-KinetiCoach is a distributed AI system designed to provide real-time biomechanical feedback for table tennis players. By leveraging the A18 chip in the iPhone 16 Plus, the system extracts skeletal motion data and streams it to a desktop hub for performance evaluation.
+Overview:
 
-Technical Architecture:
-The project is split into three core modules:
-  1. The Sensor
-       - Technology: ARKit, RealityKit, Swift.
-       - Function: Initializes a 2D body tracking session to isolate skeletal joints.
-       - Key Output: Extracts normalized X and Y coordinates of the hitting arm (Shoulder, Elbow, Wrist).
-  2. The Network Bridge (Systems)
-       - Protocol: UDP (User Datagram Protocol).
-       - Function: Streams coordinate packets over a local Wi-Fi connection to minimize latency.
-       - Data Format: Joint_Name: X_Coord, Y_Coord (e.g., RightElbow: 0.52, 0.88).
-  3. The Processor
-       - Technology: C#, .NET, WPF.
-       - Logic Engine (M2): Uses vector trigonometry to calculate joint angles and swing speed.
-       - WPF Dashboard (M3): Displays a live skeletal overlay and performance metrics like form score and consistency.
+The Table Tennis Trainer is a cross-platform motion tracking system designed to capture and visualize human body movement in real time using an iPhone camera. The system leverages Apple ARKit for body tracking, transmits joint coordinate data via UDP, and renders the motion on a Windows WPF dashboard.
+
+The long-term goal of this project is to provide an accessible and low-cost training tool that allows users to analyze their swing mechanics and eventually receive performance feedback, such as accuracy scoring.
+
+Problem Statement:
+
+Recreational and developing table tennis players often lack access to affordable tools that provide real-time feedback on their swing technique. Existing solutions are either expensive or require specialized hardware.
+
+This project addresses that gap by using:
+
+  - A standard iPhone camera
+  - Real-time motion tracking
+  - Cross-platform visualization
+
+Features:
+
+  - Real-time body tracking using ARKit
+  - Extraction of wrist and elbow joint coordinates
+  - UDP-based data transmission (Port 8888)
+  - Windows dashboard visualization (red dot representation)
+  - Live logging and debugging output
+  - Basic C++ backend for player data management
+
+In Progress / Planned:
+
+  - Swing accuracy calculation system
+  - Full UI redesign for dashboard
+  - Direct integration between backend and motion data
+  - Multi-joint tracking and advanced motion analytics
     
- Setup Guide:
-   1. Hardware Requirements
-        - Mobile: iPhone 16 Plus (required for optimal A18 tracking performance).
-        - Desktop: Windows 10/11 PC with .NET Framework installed.
-        - Mounting: A tripod is required to maintain a stable camera angle for accurate 2D analysis.
-    2. Environment Calibration
-        - Distance: Stand 6–10 feet away from the camera to ensure your full range of motion is captured.
-        - Lighting: Ensure the practice area is well-lit, as shadows can cause "jitter" in the 2D skeletal extraction.
-    3. Running the System
-        - PC Receiver: Open the Visual Studio project and start the WPF application. It will begin listening on Port 8888.
-        - iPhone Sensor: Open the Xcode project. Ensure your PC's IP address is correctly entered in the sender script.
-        - Authentication: Deploy the app to your physical device and grant Camera Permissions when prompted.
-     
-  Troubleshooting:
-    - Latency Issues: Ensure both devices are on a 5GHz Wi-Fi band. UDP is fast, but network congestion can push latency above the 100ms threshold.
-    - Tracking Drift: If the skeleton is misaligned, ensure you are wearing high-contrast clothing (different from the background) to help the 2D motion extraction.
-    - Privacy Assurance: This system is built with a Security-First approach as no raw video is recorded or stored. Only numerical coordinate data is transmitted.
+System Architecture
+          iPhone (Swift + ARKit)
+              ↓
+          Joint Coordinate Extraction (Wrist, Elbow)
+              ↓
+          UDP Transmission (Port 8888)
+              ↓
+          Windows Dashboard (C# WPF)
+              ↓
+          Real-time Visualization (Red Dot)
+               ↓
+          C++ Backend (Terminal)
+              ↓
+          Player Data Management + CSV Storage (in Progress)
+          
+Technologies Used:
+
+Layer	                 Technology
+Motion Tracking	       Swift, ARKit
+Networking	           UDP (Apple Network Framework)
+Dashboard	             C#, WPF, XAML
+Backend	               C++
+Storage	               CSV
+
+
+Setup Instructions:
+
+1. Clone Repository
+git clone <https://github.com/Prakhar211005/KINETICOACH.git>
+cd TableTennisTrainer
+
+2. iPhone Setup (Swift + ARKit)
+Requirements:
+
+  - macOS with Xcode installed
+  - ARKit-compatible iPhone (tested on iPhone 16 Plus)
+  - Same Wi-Fi network as Windows machine
+Steps:
+
+  - Open the .xcodeproj file in Xcode
+  - Connect your iPhone via USB
+  - Select your device as the run target
+  - Locate the UDP sender file (e.g., MotionTransmitter.swift)
+  - Update the IP address:
+      let host = NWEndpoint.Host("YOUR_WINDOWS_IP")
+      let port = NWEndpoint.Port(integerLiteral: 8888)
+  - Run the app on your iPhone
+  - Allow camera permissions when prompted
+3. Windows Dashboard Setup (WPF)
+Requirements:
+
+  - Windows machine
+  - Visual Studio (2022 or newer)
+  - .NET framework installed
+
+Steps:
+
+  - Open the .sln file in Visual Studio
+  - Build the solution
+  - Run the application
+
+Expected Behavior:
+
+  - Black background canvas appears
+  - Red dot appears (test or live data)
+  - Console logs show incoming UDP data
+
+4. C++ Backend Setup
+Requirements:
+
+  C++ compiler (g++, Visual Studio, or CLion)
+
+Compile & Run:
+  g++ main.cpp -o trainer
+  ./trainer
+  
+Features:
+
+  - Player login system
+  - Unique ID + password validation
+  - CSV-based data storage
+  - Menu-driven interface
+
+
+Networking Configuration
+Important Requirements:
+
+  - iPhone and Windows must be on the same network
+  - UDP port 8888 must be available
+
+Find Windows IP Address:
+  - ipconfig
+
+Look for:
+
+  - IPv4 Address
+  - Allow UDP Port (Windows Firewall)
+
+  - Run Command Prompt as Administrator:
+
+    netsh advfirewall firewall add rule name="UDP 8888" dir=in action=allow protocol=UDP localport=8888
+
+
+Data Format
+
+Data sent from iPhone:
+
+Wrist:0.23,0.41 (example)
+Elbow:0.12,0.35 (example)
+
+Format Explanation:
+
+  - JointName:x,y
+  - Coordinates are normalized values between -1 and 1
+
+Testing Instructions
+Manual Testing:
+  - Stand ~6 feet from the camera
+  - Ensure the full body is visible
+  - Move your arm
+  - Observe red dot movement
+
+Debug Verification
+
+Swift Console:
+
+  Sent: Wrist:0.23,0.41 (example)
+
+WPF Console:
+
+  RAW RECEIVED: Wrist:0.23,0.41 (example)
+
+If both appear → system is working
+
+Known Issues:
+
+  - Joint tracking becomes unstable during fast motion
+  - Requires manual IP configuration
+  - UDP packets may occasionally drop
+  - UI is minimal and not fully designed
+  - No accuracy calculation implemented yet
+
+Troubleshooting
+No Data on Windows:
+
+  - Check IP address in Swift
+  - Ensure same Wi-Fi network
+  - Verify firewall settings
+  - Restart WPF application
+
+No Red Dot:
+
+  - Check if logs show RAW RECEIVED
+  - Ensure correct data format (Wrist:x,y)
+  - Confirm Canvas is rendering correctly
+
+Project Structure
+
+TableTennisTrainer/
+│
+├── iOS-App/           # Swift + ARKit code
+├── WPF-Dashboard/     # C# + XAML UI
+├── Cpp-Backend/       # Terminal-based system
+├── players.csv        # Data storage
+└── README.md
+
+Team
+
+Prakhar Sahu — Systems & Hardware Lead
+
+ARKit integration
+UDP communication
+System architecture
+
+Dion Chen — UI/UX & Quality Lead
+
+WPF dashboard
+UI rendering
+Testing and validation
+
+Future Work:
+
+  - Implement swing accuracy calculation
+  - Improve dashboard UI/UX
+  - Add multi-joint tracking
+  - Automate network configuration
+  - Integrate backend with live motion data
+
+References:
+
+  - Apple Inc. (2025). ARKit  Body Tracking Configuration. https://developer.apple.com/documentation/arkit/arbodytrackingconfiguration 
+
+  - Apple Inc. (2025). Network Framework. Sending and Receiving Data. https://developer.apple.com/documentation/network 
+
+  - Microsoft. (2025). Windows Presentation Foundation (WPF) Overview. https://learn.microsoft.com/en-us/dotnet/desktop/wpf/ 
+
+  - Microsoft. (2025). UdpClient Class .NET Documentation. https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.udpclient 
+
+  - ISO. (2005). ISO/IEC 14882: Programming Languages C++. International Organization for Standardization. 
+
+  - RFC 768. (1980). User Datagram Protocol (UDP). Retrieved from https://datatracker.ietf.org/doc/html/rfc768 
+
+Note:
+
+This project is a prototype system demonstrating the feasibility of real-time motion tracking and visualization using consumer hardware. Further development is required to achieve production-level performance and usability.
